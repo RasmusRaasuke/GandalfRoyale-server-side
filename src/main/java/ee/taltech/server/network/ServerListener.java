@@ -26,6 +26,7 @@ public class ServerListener extends Listener {
 
     /**
      * Creates a new Player on connection and adds it to the players list.
+     *
      * @param connection Contains info of the connection with client.
      */
     @Override
@@ -43,7 +44,8 @@ public class ServerListener extends Listener {
     @Override
     public void received(Connection connection, Object incomingData) {
         Class<?> dataClass = incomingData.getClass();
-        if (dataClass == KeyPress.class || dataClass == MouseClicks.class || dataClass == GameLeave.class){
+        if (dataClass == KeyPress.class || dataClass == MouseClicks.class || dataClass == GameLeave.class
+                || dataClass == GameLoaded.class) {
             gameMessagesListener(connection, incomingData); // If message is associated with game
         } else if (dataClass == LobbyCreation.class || dataClass == Join.class || dataClass == Leave.class
                 || dataClass == GetLobbies.class || dataClass == StartGame.class) {
@@ -54,7 +56,7 @@ public class ServerListener extends Listener {
     /**
      * Listen and react to game messages.
      *
-     * @param connection connection that sent the message
+     * @param connection   connection that sent the message
      * @param incomingData message that was sent
      */
     private void gameMessagesListener(Connection connection, Object incomingData) {
@@ -106,6 +108,7 @@ public class ServerListener extends Listener {
                     server.playersToRemoveFromLobbies.put(message.playerID, game.lobby);
                     break;
                 case GameLoaded message:
+                    System.out.println(message.getGameID());
                     if (message.isLoaded()) {
                         game.addReadyPlayer(connection.getID());
                     }
@@ -119,7 +122,7 @@ public class ServerListener extends Listener {
     /**
      * Listen and react to lobby messages.
      *
-     * @param connection connection that sent the message
+     * @param connection   connection that sent the message
      * @param incomingData message that was sent
      */
     private void lobbyMessagesListener(Connection connection, Object incomingData) {
@@ -167,7 +170,6 @@ public class ServerListener extends Listener {
                     for (Integer playerId : lobby.players) {
                         server.server.sendToTCP(playerId, startGame); // Start game for players
                     }
-
                     // Create new game instance and add it to games list in GameServer
                     Game game = new Game(server, lobby);
                     server.games.put(lobby.lobbyId, game);
@@ -184,6 +186,7 @@ public class ServerListener extends Listener {
     /**
      * Removes the player from the players list.
      * Makes the client-server connection disappear from the listener.
+     *
      * @param connection Connection with the client.
      */
     @Override

@@ -4,7 +4,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import com.esotericsoftware.kryo.Kryo;
 import ee.taltech.server.GameServer;
-import ee.taltech.server.TickRateLoop;
 import ee.taltech.server.entities.Item;
 import ee.taltech.server.entities.Mob;
 import ee.taltech.server.entities.Spell;

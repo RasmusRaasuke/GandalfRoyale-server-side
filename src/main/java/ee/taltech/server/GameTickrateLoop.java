@@ -8,7 +8,7 @@ import ee.taltech.server.entities.Spell;
 import ee.taltech.server.entities.spawner.EntitySpawner;
 import ee.taltech.server.network.messages.game.*;
 
-public class TickRateLoop implements Runnable {
+public class GameTickrateLoop implements Runnable {
     private final Game game;
     private final GameServer gameServer;
     public volatile boolean running = true;
@@ -16,7 +16,7 @@ public class TickRateLoop implements Runnable {
     /**
      * @param game One game instance.
      */
-    public TickRateLoop(Game game, GameServer gameServer) {
+    public GameTickrateLoop(Game game, GameServer gameServer) {
         this.game = game;
         this.gameServer = gameServer;
     }
