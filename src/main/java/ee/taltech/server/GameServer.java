@@ -19,16 +19,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class GameServer {
     public final Server server;
-    public final ConcurrentHashMap<Integer, Integer> connections;
-    public final ConcurrentHashMap<Integer, Lobby> lobbies;
-    public final ConcurrentHashMap<Integer, Game> games;
+    public ConcurrentHashMap<Integer, Integer> connections;
+    public ConcurrentHashMap<Integer, Lobby> lobbies;
+    public ConcurrentHashMap<Integer, Game> games;
 
-    private final ConcurrentHashMap<Integer, Thread> gameThreads = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, Thread> gameThreads;
 
-    public final ConcurrentLinkedQueue<Integer> connectionsToRemove;
-    public final ConcurrentLinkedQueue<Integer> lobbiesToRemove;
-    public final ConcurrentLinkedQueue<Integer> gamesToRemove;
-    public final ConcurrentHashMap<Integer, Lobby> playersToRemoveFromLobbies;
+    public ConcurrentLinkedQueue<Integer> connectionsToRemove;
+    public ConcurrentLinkedQueue<Integer> lobbiesToRemove;
+    public ConcurrentLinkedQueue<Integer> gamesToRemove;
+    public ConcurrentHashMap<Integer, Lobby> playersToRemoveFromLobbies;
 
     /**
      * Main constructor for the server.
@@ -37,6 +37,7 @@ public class GameServer {
         this.lobbies = new ConcurrentHashMap<>(); // Contains gameIds: lobby
         this.connections = new ConcurrentHashMap<>(); // Contains playerId: gameId
         this.games = new ConcurrentHashMap<>(); // Contains gameIds: game
+        this.gameThreads = new ConcurrentHashMap<>();
 
         this.server = new Server();
 
@@ -55,10 +56,10 @@ public class GameServer {
             throw new NoSuchElementException(e);
         }
 
-        registerKryos(); // Add sendable data structures.
+        registerKryos(); // Add sendable data structures.                                     ,
         server.addListener(new ServerListener(this)); // Creates a new listener, to listen to messages and connections.
 
-        globalTick();
+        globalLoop();
     }
 
     /**
@@ -104,37 +105,39 @@ public class GameServer {
     }
 
     public void globalTick() { // A new method for global updates
-        while (true) {
-            // *--------------- REMOVE CONNECTION ---------------*
+        System.out.println(games);
+        System.out.println(lobbies);
+        // *--------------- REMOVE CONNECTION ---------------*
+        if (!connectionsToRemove.isEmpty()) {
             for (Integer connection : connectionsToRemove) {
                 connections.remove(connection);
             }
             connectionsToRemove.clear();
+        }
 
-            // *--------------- REMOVE LOBBIES ---------------*
+        // *--------------- REMOVE LOBBIES ---------------*
+        if (!lobbiesToRemove.isEmpty()) {
             for (Integer lobbyId : lobbiesToRemove) {
                 lobbies.remove(lobbyId);
             }
             lobbiesToRemove.clear();
+        }
 
-            // *--------------- REMOVE GAMES ---------------*
+        // *--------------- REMOVE GAMES ---------------*
+        if (!gamesToRemove.isEmpty()) {
             for (Integer gameId : gamesToRemove) {
                 games.remove(gameId);
                 // Potentially stop the associated thread here
                 Thread gameThread = gameThreads.remove(gameId);
                 if (gameThread != null) {
-                    try {
-                        gameThread.interrupt();
-                        gameThread.join(1000); // Wait up to 1 second
-
-                    } catch (InterruptedException e) {
-                        System.err.println("Error stopping game thread: " + e.getMessage());
-                    }
+                    gameThread.interrupt();
                 }
             }
             gamesToRemove.clear();
+        }
 
-            // *--------------- REMOVE PLAYERS FROM LOBBIES ---------------*
+        // *--------------- REMOVE PLAYERS FROM LOBBIES ---------------*
+        if (!playersToRemoveFromLobbies.isEmpty()) {
             for (Map.Entry<Integer, Lobby> lobbyEntry : playersToRemoveFromLobbies.entrySet()) {
                 Integer playerId = lobbyEntry.getKey();
                 Lobby lobby = lobbyEntry.getValue();
@@ -144,8 +147,19 @@ public class GameServer {
         }
     }
 
+    public void globalLoop() {
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                globalTick();
+            }
+        }, 0, 1000);
+    }
+
     public void startGame(Game game) {
-        Thread gameThread = new Thread(new GameTickrateLoop(game, this));
+        System.out.println("game is on going");
+        Thread gameThread = new Thread(new GameTickrateLoop(game, this, gamesToRemove));
         gameThreads.put(game.gameId, gameThread);
         gameThread.start();
     }
@@ -159,5 +173,8 @@ public class GameServer {
     public static void main(String[] args) {
         Headless.loadHeadless();
         new GameServer();
+    }
+
+    public void gamesToRemove(Integer gameId) {
     }
 }

@@ -93,8 +93,6 @@ public class Game {
 
         this.staringTicks = 0;
         this.endingTicks = 0;
-
-
     }
 
     /**
@@ -512,6 +510,7 @@ public class Game {
         for (Integer ID : gamePlayers.keySet()) {
             server.server.sendToTCP(ID, new GameLoaded(gameId, true));
         }
+        server.startGame(this);
     }
 
     private boolean arePlayersReady() {

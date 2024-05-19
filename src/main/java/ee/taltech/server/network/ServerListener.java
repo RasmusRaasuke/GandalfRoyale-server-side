@@ -173,7 +173,6 @@ public class ServerListener extends Listener {
                     // Create new game instance and add it to games list in GameServer
                     Game game = new Game(server, lobby);
                     server.games.put(lobby.lobbyId, game);
-                    server.startGame(game);
                     server.lobbies.remove(startGame.gameId); // Remove lobby from gameServer lobby's list
                     server.server.sendToAllTCP(new LobbyDismantle(startGame.gameId)); // Remove lobby for clients
                 }

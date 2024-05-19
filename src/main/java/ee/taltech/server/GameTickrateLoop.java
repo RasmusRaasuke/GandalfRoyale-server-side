@@ -8,17 +8,21 @@ import ee.taltech.server.entities.Spell;
 import ee.taltech.server.entities.spawner.EntitySpawner;
 import ee.taltech.server.network.messages.game.*;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class GameTickrateLoop implements Runnable {
     private final Game game;
     private final GameServer gameServer;
+    private final ConcurrentLinkedQueue<Integer> gamesToRemove;
     public volatile boolean running = true;
 
     /**
      * @param game One game instance.
      */
-    public GameTickrateLoop(Game game, GameServer gameServer) {
+    public GameTickrateLoop(Game game, GameServer gameServer, ConcurrentLinkedQueue<Integer> gamesToRemove) {
         this.game = game;
         this.gameServer = gameServer;
+        this.gamesToRemove = gamesToRemove;
     }
 
     /**
@@ -60,16 +64,6 @@ public class GameTickrateLoop implements Runnable {
                 game.sendPlayZoneCoordinates();
             }
 
-            // End the game
-            if (game.gamePlayers.size() - game.getDeadPlayers().size() <= 1) { // If last player is alive
-                // Let the game finish it's logic before ending
-                if (game.getEndingTicks() < Constants.TICKS_TO_END_GAME) game.addTick(false);
-                if (game.getEndingTicks() == Constants.TICKS_TO_END_GAME) {
-                    game.endGame(); // End the game
-                    gameServer.gamesToRemove.add(game.gameId); // Remove the game from the sever
-                    return; // Skip updating
-                }
-            }
 
             for (PlayerCharacter player : game.gamePlayers.values()) {
                 if (!game.getDeadPlayers().containsValue(player)) {
@@ -120,6 +114,15 @@ public class GameTickrateLoop implements Runnable {
 
                 if (mob.getHealth() == 0) {
                     game.mobsToRemove.add(mob);
+                }
+            }
+            // End the game
+            if (game.gamePlayers.size() - game.getDeadPlayers().size() <= 1) { // If last player is alive
+                // Let the game finish it's logic before ending
+                if (game.getEndingTicks() < Constants.TICKS_TO_END_GAME) game.addTick(false);
+                if (game.getEndingTicks() == Constants.TICKS_TO_END_GAME) {
+                    game.endGame(); // End the game
+                    gamesToRemove.add(game.gameId); // Remove the game from the sever
                 }
             }
             game.update();
