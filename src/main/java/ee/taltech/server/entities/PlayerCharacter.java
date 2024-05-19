@@ -36,6 +36,7 @@ public class PlayerCharacter implements Entity {
     private Integer healingTicks;
     public ItemTypes type;
     private boolean collidingWithMob;
+    private boolean loaded;
 
     /**
      * Construct PlayerCharacter.
@@ -44,6 +45,7 @@ public class PlayerCharacter implements Entity {
      */
     public PlayerCharacter(Integer playerID) {
         // Here should be the semi-random spawn points for a PlayerCharacter
+        this.loaded = false;
         this.xPosition = 8200 / Constants.PPM;
         this.yPosition = 2960 / Constants.PPM;
 
@@ -334,5 +336,13 @@ public class PlayerCharacter implements Entity {
             setHealth(Math.min(health + HEAL_PER_TICK, 100));
             healingTicks--;
         }
+    }
+
+    public void setReady() {
+        this.loaded = true;
+    }
+
+    public boolean isReady() {
+        return this.loaded;
     }
 }

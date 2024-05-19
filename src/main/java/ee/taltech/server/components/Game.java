@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import com.esotericsoftware.kryo.Kryo;
 import ee.taltech.server.GameServer;
+import ee.taltech.server.TickRateLoop;
 import ee.taltech.server.entities.Item;
 import ee.taltech.server.entities.Mob;
 import ee.taltech.server.entities.Spell;
@@ -46,6 +47,7 @@ public class Game {
     private int endingTicks;
     private final long startTime;
     private int currentTime;
+    private boolean loaded;
 
 
     /**
@@ -55,6 +57,7 @@ public class Game {
      * @param lobby given players that will be playing in this game
      */
     public Game(GameServer server, Lobby lobby) {
+        this.loaded = false;
         world = new World(new Vector2(0, 0), true);
         Kryo kryo = server.server.getKryo();
         new WorldCollision(world, kryo);
@@ -91,6 +94,8 @@ public class Game {
 
         this.staringTicks = 0;
         this.endingTicks = 0;
+
+
     }
 
     /**
@@ -492,5 +497,34 @@ public class Game {
                 server.server.sendToTCP(playerId, new GameOver(winnerId));
             }
         }
+    }
+
+    public void addReadyPlayer(int id) {
+        PlayerCharacter playerCharacter = gamePlayers.get(id);
+        playerCharacter.setReady();
+
+        if (arePlayersReady()) {
+            this.loaded = true;
+            sendGameReady();
+        }
+    }
+
+    private void sendGameReady() {
+        for (Integer ID : gamePlayers.keySet()) {
+            server.server.sendToTCP(ID, new GameLoaded(gameId, true));
+        }
+    }
+
+    private boolean arePlayersReady() {
+        for (PlayerCharacter playerCharacter : gamePlayers.values()) {
+            if (!playerCharacter.isReady()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean loaded() {
+        return this.loaded;
     }
 }

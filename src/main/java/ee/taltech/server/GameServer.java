@@ -14,12 +14,15 @@ import ee.taltech.server.world.MapObjectData;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GameServer {
     public final Server server;
     public final Map<Integer, Integer> connections;
     public final Map<Integer, Lobby> lobbies;
     public final Map<Integer, Game> games;
+
+    private final Map<Integer, Thread> gameThreads = new ConcurrentHashMap<>();
 
     public final List<Integer> connectionsToRemove;
     public final List<Integer> lobbiesToRemove;
@@ -51,8 +54,8 @@ public class GameServer {
             throw new NoSuchElementException(e);
         }
 
-        TickRateLoop tickRateLoop = new TickRateLoop(server, this); // Create a running TPS loop.
-        Thread tickRateThread = new Thread(tickRateLoop); // Run TPS parallel to other processes.
+        GlobalTickrate globalTick = new GlobalTickrate(); // Create a running TPS loop.
+        Thread tickRateThread = new Thread(globalTick); // Run TPS parallel to other processes.
         tickRateThread.start();
 
         registerKryos(); // Add sendable data structures.
@@ -96,9 +99,51 @@ public class GameServer {
         kryo.register(UpdateMobHealth.class);
         kryo.register(GameLeave.class);
         kryo.register(GameOver.class);
+        kryo.register(GameLoaded.class);
         kryo.addDefaultSerializer(KeyPress.Action.class, DefaultSerializers.EnumSerializer.class);
         kryo.addDefaultSerializer(ItemTypes.class, DefaultSerializers.EnumSerializer.class);
     }
+
+    public void globalTick() { // A new method for global updates
+        // *--------------- REMOVE CONNECTION ---------------*
+        for (Integer connection : connectionsToRemove) {
+            connections.remove(connection);
+        }
+        connectionsToRemove.clear();
+
+        // *--------------- REMOVE LOBBIES ---------------*
+        for (Integer lobbyId : lobbiesToRemove) {
+            lobbies.remove(lobbyId);
+        }
+        lobbiesToRemove.clear();
+
+        // *--------------- REMOVE GAMES ---------------*
+        for (Integer gameId : gamesToRemove) {
+            games.remove(gameId);
+            // Potentially stop the associated thread here
+            Thread gameThread = gameThreads.remove(gameId);
+            if (gameThread != null) {
+                TickRateLoop tickRateLoop = (TickRateLoop) gameThread.get();
+                tickRateLoop.running = false;
+            }
+        }
+        gamesToRemove.clear();
+
+        // *--------------- REMOVE PLAYERS FROM LOBBIES ---------------*
+        for (Map.Entry<Integer, Lobby> lobbyEntry : playersToRemoveFromLobbies.entrySet()) {
+            Integer playerId = lobbyEntry.getKey();
+            Lobby lobby = lobbyEntry.getValue();
+            lobby.removePlayer(playerId);
+        }
+        playersToRemoveFromLobbies.clear();
+    }
+
+    public void startGame(Game game) {
+        Thread gameThread = new Thread(new TickRateLoop(game, this));
+        gameThreads.put(game.gameId, gameThread);
+        gameThread.start();
+    }
+
 
     /**
      * Start server.

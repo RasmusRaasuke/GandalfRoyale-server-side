@@ -37,7 +37,7 @@ public class Constants {
     public static final float KUNAI_SPEED = 10;
     public static final float METEOR_SPEED = 5;
 
-    public static final int TICKS_TO_START_GAME = 1000;
+    public static final int TICKS_TO_START_GAME = 300;
     public static final int TICKS_TO_END_GAME = 60;
 
     public static final float MOB_DMG_PER_TIC = 0.15f;
