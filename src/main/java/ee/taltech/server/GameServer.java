@@ -123,8 +123,13 @@ public class GameServer {
             // Potentially stop the associated thread here
             Thread gameThread = gameThreads.remove(gameId);
             if (gameThread != null) {
-                TickRateLoop tickRateLoop = (TickRateLoop) gameThread.get();
-                tickRateLoop.running = false;
+                try {
+                    gameThread.interrupt();
+                    gameThread.join(1000); // Wait up to 1 second
+
+                } catch (InterruptedException e) {
+                    System.err.println("Error stopping game thread: " + e.getMessage());
+                }
             }
         }
         gamesToRemove.clear();
