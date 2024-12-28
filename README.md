@@ -1,4 +1,4 @@
-# iti0301-2024
+# Gandalf Royale
 
 ## Idea
 
@@ -12,7 +12,7 @@ This is a battle royale game that we wrote in java using Libgdx.
 
 Our server side is in another [repository](https://github.com/RasmusRaasuke/GandalfRoyale-client-side).
 
-## Gandalf Royale
+## Gameplay
 
 Players start empty handed spread around the map. Players have three inventory slots and they can collect different magic weapons and they can also switch between them or drop them. Different weapons have different purposes, some deal damage and some have other uses. The play area shrinks over time until only one player is alive, at which point the game ends. The player can be in the red zone, but will take damage over time.
 There are also AI pumpkins roaming around the map (randomized movement), they will follow the player when the player enters their proximity (players will take damage, when the pumpkin is close enough). Pumpkins drop gold coins when killed. These coins can be used to buy even better weapons and to restore health.
